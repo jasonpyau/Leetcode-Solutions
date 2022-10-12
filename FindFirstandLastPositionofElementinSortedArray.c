@@ -5,8 +5,8 @@
  */
 
 int search(int* nums, int numsSize, int target, int min, int max, int rangeItem) {
-    //RANGE ITEM OF -1 -> FIRST POSITION OF TARGET
-    //RANGE ITEM OF 1 -> LAST POSITION OF TARGET
+    //RANGE ITEM OF -1 -> FIND FIRST POSITION OF TARGET
+    //RANGE ITEM OF 1 -> FIND LAST POSITION OF TARGET
     int i;
     while (max >= min) { 
         i = (min + max)/2;
