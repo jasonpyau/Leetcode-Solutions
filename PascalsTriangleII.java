@@ -12,3 +12,4 @@ class Solution {
         return row;
     }
 }
+//https://math.stackexchange.com/questions/1154955/is-there-an-equation-that-represents-the-nth-row-in-pascals-triangle
