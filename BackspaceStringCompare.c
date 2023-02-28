@@ -1,4 +1,4 @@
-char* backspace_str(char* str, char* bs_str) {
+void backspace_str(char* str, char* bs_str) {
     int j = 0;
     for (int i = 0; str[i] != '\0'; i++) {
         if (str[i] == '#'){
@@ -8,7 +8,6 @@ char* backspace_str(char* str, char* bs_str) {
             bs_str[j++]= str[i];
     }
     bs_str[j] = '\0';
-    return bs_str;
 }
 
 bool backspaceCompare(char * s, char * t){
