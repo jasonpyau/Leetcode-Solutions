@@ -16,7 +16,7 @@ struct ListNode* addTwoNumbers(struct ListNode* l1, struct ListNode* l2) {
     int remainder = 0;
     struct ListNode* sum = createNode();
     struct ListNode* digit = sum;
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 101; i++) {
         int l1_val = (l1) ? l1->val : 0;
         int l2_val = (l2) ? l2->val : 0;
         int digit_sum = l1_val + l2_val + remainder;
