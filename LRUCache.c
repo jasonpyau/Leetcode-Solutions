@@ -80,12 +80,12 @@ void mapRemove(LList** mapLListRef, LList* deque, Node** delNodeRef) {
     if (!mapLList) {
         return;
     }
-    mapLList->size--;
     if (mapLList->size == 1) {
         free(*mapLListRef);
         *mapLListRef = NULL;
     } else if (mapLList->head == delNode) {
         mapLList->head = mapLList->head->mapNext;
+        mapLList->size--;
     } else {
         Node* curr = mapLList->head;
         while (curr->mapNext) {
@@ -95,6 +95,7 @@ void mapRemove(LList** mapLListRef, LList* deque, Node** delNodeRef) {
             curr = curr->mapNext;
         }
         curr->mapNext = delNode->mapNext;
+        mapLList->size--;
     }
     dequeRemove(deque, delNode);
     free(*delNodeRef);
@@ -124,15 +125,14 @@ void dequeRemove(LList* deque, Node* curr) {
         deque->head = deque->head->dequeNext;
         deque->head->dequePrev = NULL;
     } else {
-        if (deque->tail == curr) {
-            deque->tail = deque->tail->dequePrev;
-        }
         Node* prev = curr->dequePrev;
         Node* next = curr->dequeNext;
-        prev->dequeNext = next;
-        if (next) {
+        if (deque->tail == curr) {
+            deque->tail = prev;
+        } else {
             next->dequePrev = prev;
         }
+        prev->dequeNext = next;
     }
     deque->size--;
 }
