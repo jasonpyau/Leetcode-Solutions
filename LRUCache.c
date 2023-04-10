@@ -1,10 +1,9 @@
-#define MAP_FACTOR 100
+#define MAP_FACTOR 1001
 
 typedef struct {
     int key;
     int value;
-    struct Node* next;
-    struct Node* prev;
+    struct Node* mapNext;
     struct Node* dequeNext;
     struct Node* dequePrev;
 } Node;
@@ -26,7 +25,7 @@ typedef struct {
     Map* map;
 } LRUCache;
 
-Node* mapGet(Map*, LList*, int);
+Node* mapLListFind(LList*, int);
 void mapPut(Map*, LList*, int, int);
 void mapReplace(Map*, LList*, Node*, int, int);
 void mapRemove(LList**, LList*, Node**);
@@ -34,65 +33,72 @@ Node* llistPut(LList*, int, int);
 void dequeAdd(LList*, Node*);
 void dequeRemove(LList*, Node*);
 
-Node* mapGet(Map* map, LList* deque, int key) {
-    int n = map->capacity;
+static inline LList* mapLListGet(Map* map, int key) {
     LList** map_llists = map->llists;
-    LList* llist = map_llists[key%n];
-    if (!llist)
+    return map_llists[key%(map->capacity)];
+}
+
+Node* mapLListFind(LList* mapLList, int key) {
+    if (!mapLList) {
         return NULL;
-    Node* curr = llist->head;
+    }
+    Node* curr = mapLList->head;
     while (curr) {
         if (curr->key == key) {
             return curr;
         }
-        curr = curr->next;
+        curr = curr->mapNext;
     }
     return NULL;
 }
 
 void mapPut(Map* map, LList* deque, int key, int value) {
-    int n = map->capacity;
-    LList** map_llists = map->llists;
-    LList* llist = map_llists[key%n];
-    if (!llist) {
-        llist = (LList*)malloc(sizeof(LList));
-        llist->size = 0;
-        map_llists[key%n] = llist;
+    LList* map_llist = mapLListGet(map, key);
+    if (!map_llist) {
+        map_llist = (LList*)malloc(sizeof(LList));
+        map_llist->size = 0;
+        map->llists[key%(map->capacity)] = map_llist;
     }
-    Node* node = llistPut(llist, key, value);
+    Node* node = llistPut(map_llist, key, value);
     dequeAdd(deque, node);
 }
 
 void mapReplace(Map* map, LList* deque, Node* curr, int key, int value) {
     int n = map->capacity;
     int oldKey = curr->key;
-    LList** map_llists = map->llists;
-    LList* llist = map_llists[oldKey%n];
+    LList* llist = mapLListGet(map, oldKey);
     mapRemove(&llist, deque, &curr);
     if (!llist) {
-        map_llists[oldKey%n] = NULL;
+        map->llists[oldKey%n] = NULL;
     }
     mapPut(map, deque, key, value);
 }
 
-void mapRemove(LList** mapListRef, LList* deque, Node** currRef) {
-    LList* mapList = *mapListRef;
-    Node* curr = *currRef;
-    if (!mapList) {
+void mapRemove(LList** mapLListRef, LList* deque, Node** delNodeRef) {
+    LList* mapLList = *mapLListRef;
+    Node* delNode = *delNodeRef;
+    if (!mapLList) {
         return;
-    } else if (mapList->size == 1) {
-        free(*mapListRef);
-        *mapListRef = NULL;
-    } else if (mapList->head->key == curr->key) {
-        mapList->head = curr->next;
-        mapList->size--;
-    } else {
-        curr->prev = curr->next;
-        mapList->size--;
     }
-    dequeRemove(deque, curr);
-    free(*currRef);
-    *currRef = NULL;
+    mapLList->size--;
+    if (mapLList->size == 1) {
+        free(*mapLListRef);
+        *mapLListRef = NULL;
+    } else if (mapLList->head == delNode) {
+        mapLList->head = mapLList->head->mapNext;
+    } else {
+        Node* curr = mapLList->head;
+        while (curr->mapNext) {
+            if (curr->mapNext == delNode) {
+                break;
+            }
+            curr = curr->mapNext;
+        }
+        curr->mapNext = delNode->mapNext;
+    }
+    dequeRemove(deque, delNode);
+    free(*delNodeRef);
+    *delNodeRef = NULL;
 }
 
 void dequeAdd(LList* deque, Node* curr) {
@@ -114,11 +120,11 @@ void dequeRemove(LList* deque, Node* curr) {
     } else if (deque->size == 1) {
         deque->head = NULL;
         deque->tail = NULL;
-    } else if (deque->head->key == curr->key) {
+    } else if (deque->head == curr) {
         deque->head = deque->head->dequeNext;
         deque->head->dequePrev = NULL;
     } else {
-        if (deque->tail->key == curr->key) {
+        if (deque->tail == curr) {
             deque->tail = deque->tail->dequePrev;
         }
         Node* prev = curr->dequePrev;
@@ -133,8 +139,7 @@ void dequeRemove(LList* deque, Node* curr) {
 
 Node* llistPut(LList* llist, int key, int value) {
     Node* node = (Node*)malloc(sizeof(Node));
-    node->next = NULL;
-    node->prev = llist->tail;
+    node->mapNext = NULL;
     node->key = key;
     node->value = value;
     node->dequePrev = NULL;
@@ -143,6 +148,7 @@ Node* llistPut(LList* llist, int key, int value) {
         llist->head = node;
         llist->tail = node;
     } else {
+        llist->tail->mapNext = node;
         llist->tail = node;
     }
     llist->size++;
@@ -165,9 +171,20 @@ LRUCache* lRUCacheCreate(int capacity) {
     return lru;
 }
 
+static inline void putNewNode(LRUCache* obj, Map* map, LList* deque, int key, int value) {
+    if (obj->capacity == deque->size) {
+        mapReplace(map, deque, deque->head, key, value);
+    } else {
+        mapPut(map, deque, key, value);
+    }
+}
+
 int lRUCacheGet(LRUCache* obj, int key) {
-    Map* map = obj->map;
-    Node* node = mapGet(map, obj->deque, key);
+    LList* map_llist = mapLListGet(obj->map, key);
+    if (!map_llist) {
+        return -1;
+    }
+    Node* node = mapLListFind(map_llist, key);
     if (!node) {
         return -1;
     }
@@ -179,19 +196,19 @@ int lRUCacheGet(LRUCache* obj, int key) {
 void lRUCachePut(LRUCache* obj, int key, int value) {
     Map* map = obj->map;
     LList* deque = obj->deque;
-    Node* map_node = mapGet(map, deque, key);
-    if (map_node == NULL) {
-        int objSize = deque->size;
-        if (obj->capacity == objSize) {
-            mapReplace(map, deque, deque->head, key, value);
-        } else {
-            mapPut(map, deque, key, value);
-        }
-    } else {
-        dequeRemove(obj->deque, map_node);
-        map_node->value = value;
-        dequeAdd(obj->deque, map_node);
+    LList* map_llist = mapLListGet(map, key);
+    if (!map_llist) {
+        putNewNode(obj, map, deque, key, value);
+        return;
     }
+    Node* map_node = mapLListFind(map_llist, key);
+    if (!map_node) {
+        putNewNode(obj, map, deque, key, value);
+        return;
+    }
+    dequeRemove(deque, map_node);
+    map_node->value = value;
+    dequeAdd(deque, map_node);
 }
 
 void lRUCacheFree(LRUCache* obj) {
@@ -201,8 +218,11 @@ void lRUCacheFree(LRUCache* obj) {
     LList** map_llists = map->llists;
     while (curr) {
         Node* next = curr->dequeNext;
-        int key = curr->key;
-        free(map_llists[key%n]);
+        int map_ind = (curr->key)%n;
+        if (map_llists[map_ind]) {
+            free(map_llists[map_ind]);
+            map_llists[map_ind] = NULL;
+        }
         free(curr);
         curr = next;
     }
