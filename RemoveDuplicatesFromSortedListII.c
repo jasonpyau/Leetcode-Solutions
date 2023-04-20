@@ -7,8 +7,6 @@
  */
 
 struct ListNode* nextNonDupe(struct ListNode* curr) {
-    if (!curr)
-        return NULL;
     int val = curr->val;
     while (curr && curr->val == val)
         curr = curr->next;
@@ -16,12 +14,8 @@ struct ListNode* nextNonDupe(struct ListNode* curr) {
 }
 
 struct ListNode* deleteDuplicates(struct ListNode* head) {
-    while (head && head->next) {
-        if (head->val == head->next->val)
-            head = nextNonDupe(head);
-        else
-            break;
-    }
+    while (head && head->next && head->val == head->next->val)
+        head = nextNonDupe(head);
     struct ListNode* curr = head;
     while (curr) {
         struct ListNode* prev = curr;
