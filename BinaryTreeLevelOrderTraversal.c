@@ -24,7 +24,6 @@ void traverse(struct TreeNode* curr, int*** ans, int level, int* deepest, int* r
             int old_size = *returnSize;
             while (*returnSize < level)
                 *returnSize <<= 1;
-            (*returnSize) *= 2;
             int delta = (*returnSize)-old_size;
             *ans = realloc(*ans, (*returnSize)*sizeof(int*));
             *returnColumnSizes = realloc(*returnColumnSizes, (*returnSize)*sizeof(int));
