@@ -13,14 +13,14 @@ class Solution {
 public:
     TreeNode* reverseOddLevels(TreeNode* root) {
         vector<TreeNode*> last_nodes(1, root);
-        for (int i = 1; last_nodes.size(); i++) {
+        for (int i = 1; ; i++) {
             vector<TreeNode*> curr_nodes;
             curr_nodes.reserve(last_nodes.size()*2);
+            if (!last_nodes[0]->left)
+                break;
             for (TreeNode* node : last_nodes) {
-                if (node->left)
-                    curr_nodes.push_back(node->left);
-                if (node->right)
-                    curr_nodes.push_back(node->right);
+                curr_nodes.push_back(node->left);
+                curr_nodes.push_back(node->right);
             }
             if (i & 1) {
                 for (int l = 0, r = curr_nodes.size()-1; r > l; l++, r--) {
