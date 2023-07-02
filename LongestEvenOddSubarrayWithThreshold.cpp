@@ -10,7 +10,7 @@ public:
                 }
             }
             curr = 1;
-            while (i < nums.size()-1 && nums[i+1] <= threshold && (nums[i]&1)^(nums[i+1]&1)) {
+            while (i < nums.size()-1 && nums[i+1] <= threshold && (nums[i]^nums[i+1])&1) {
                 curr++;
                 i++;
             }
