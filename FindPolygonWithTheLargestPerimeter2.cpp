@@ -3,7 +3,7 @@ class Solution {
 // make_heap is O(n) time.
 // The longest invalid sequence is [1,2,4,8,16,32,...]
 // 1+10+100+1000+10000 = 11111... < 100000..., in binary.
-// Thus, we have c*n+k*log(k), c in Z+, k <= 30 (2^31 > 10^9) = O(n).
+// Thus, we have c*n+k*log(n), c in Z+, k <= 30 (2^31 > 10^9) = O(n).
 public:
     long long largestPerimeter(vector<int>& nums) {
         vector<int> heap(nums.begin(), nums.end());
